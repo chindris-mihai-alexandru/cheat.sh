@@ -52,10 +52,10 @@ class UpstreamAdapter(Adapter):
 
     def _get_page(self, topic, request_options=None):
 
-        options_string = "&".join(["%s=%s" % (x, y) for (x, y) in request_options.items()])
+        options_string = "&".join([f"{x}={y}" for (x, y) in request_options.items()])
         url = CONFIG["upstream.url"].rstrip('/') \
-                + '/' + topic.lstrip('/') \
-                + "?" + options_string
+                    + '/' + topic.lstrip('/') \
+                    + "?" + options_string
         try:
             response = requests.get(url, timeout=CONFIG["upstream.timeout"])
             answer = response.text

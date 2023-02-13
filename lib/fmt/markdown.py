@@ -40,17 +40,16 @@ def _colorize(text):
 
 def _format_section(section_text, config=None, highlighter=None):
 
-    answer = ''
-
     # cut code blocks
     block_number = 0
     while True:
         section_text, replacements = re.subn(
             '^```.*?^```',
-            'MULTILINE_BLOCK_%s' % block_number,
+            f'MULTILINE_BLOCK_{block_number}',
             section_text,
             1,
-            flags=re.S | re.MULTILINE)
+            flags=re.S | re.MULTILINE,
+        )
         block_number += 1
         if not replacements:
             break
@@ -59,17 +58,15 @@ def _format_section(section_text, config=None, highlighter=None):
     links = []
     while True:
         regexp = re.compile(r'\[(.*?)\]\((.*?)\)')
-        match = regexp.search(section_text)
-        if match:
-            links.append(match.group(0))
-            text = match.group(1)
-            # links are not yet supported
-            #
-            text = '\x1B]8;;%s\x1B\\\\%s\x1B]8;;\x1B\\\\' % (match.group(2), match.group(1))
-        else:
+        if not (match := regexp.search(section_text)):
             break
 
 
+        links.append(match[0])
+        text = match[1]
+            # links are not yet supported
+            #
+        text = '\x1B]8;;%s\x1B\\\\%s\x1B]8;;\x1B\\\\' % (match[2], match[1])
         section_text, replacements = regexp.subn(
             text, # 'LINK_%s' % len(links),
             section_text,
@@ -78,11 +75,14 @@ def _format_section(section_text, config=None, highlighter=None):
         if not replacements:
             break
 
-    for paragraph in _split_into_paragraphs(section_text):
-        answer += "\n".join(
+    answer = ''.join(
+        "\n".join(
             ansiwrap.fill(_colorize(line)) + "\n"
-            for line in paragraph.splitlines()) + "\n"
-
+            for line in paragraph.splitlines()
+        )
+        + "\n"
+        for paragraph in _split_into_paragraphs(section_text)
+    )
     return {
         'ansi': answer,
         'links': links

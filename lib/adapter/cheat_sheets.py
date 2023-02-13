@@ -26,7 +26,7 @@ def _sanitize_dirnames(filename, restore=False):
     newparts = []
     for part in parts[:-1]:
         if restore:
-            newparts.append('_'+part)
+            newparts.append(f'_{part}')
             continue
         if part.startswith('_'):
             newparts.append(part[1:])
@@ -78,13 +78,11 @@ class CheatSheets(GitRepositoryAdapter):
             self._cheatsheet_files_prefix,
             _sanitize_dirnames(topic, restore=True))
 
-        if os.path.exists(filename):
-            answer = self._format_page(open(filename, 'r').read())
-        else:
-            # though it should not happen
-            answer = "%s:%s not found" % (str(self.__class__), topic)
-
-        return answer
+        return (
+            self._format_page(open(filename, 'r').read())
+            if os.path.exists(filename)
+            else f"{str(self.__class__)}:{topic} not found"
+        )
 
 class CheatSheetsDir(CheatSheets):
 
@@ -107,12 +105,13 @@ class CheatSheetsDir(CheatSheets):
             self._cheatsheet_files_prefix,
             '*')
 
-        answer = sorted([
-            _remove_initial_underscore(os.path.basename(f_name)) + "/"
-            for f_name in glob.glob(template)
-            if os.path.isdir(f_name)])
-
-        return answer
+        return sorted(
+            [
+                f"{_remove_initial_underscore(os.path.basename(f_name))}/"
+                for f_name in glob.glob(template)
+                if os.path.isdir(f_name)
+            ]
+        )
 
     def _get_page(self, topic, request_options=None):
         """

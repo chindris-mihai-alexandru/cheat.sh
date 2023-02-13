@@ -63,10 +63,7 @@ def _colorize_ansi_answer(topic, answer, color_style,       # pylint: disable=to
     color_style = color_style or "native"
     lexer_class = languages_data.LEXER['bash']
     if '/' in topic:
-        if language is None:
-            section_name = topic.split('/', 1)[0].lower()
-        else:
-            section_name = language
+        section_name = topic.split('/', 1)[0].lower() if language is None else language
         section_name = languages_data.get_lexer_name(section_name)
         lexer_class = languages_data.LEXER.get(section_name, lexer_class)
         if section_name == 'php':
@@ -78,21 +75,20 @@ def _colorize_ansi_answer(topic, answer, color_style,       # pylint: disable=to
     else:
         highlight = lambda x: x
 
-    if highlight_code:
-        blocks = fmt.comments.code_blocks(
-            answer, wrap_lines=True, unindent_code=(4 if unindent_code else False))
-        highlighted_blocks = []
-        for block in blocks:
-            if block[0] == 1:
-                this_block = highlight(block[1])
-            else:
-                this_block = block[1].strip('\n')+'\n'
-            highlighted_blocks.append(this_block)
+    if not highlight_code:
+        return highlight(answer).lstrip('\n')
+    blocks = fmt.comments.code_blocks(
+        answer, wrap_lines=True, unindent_code=(4 if unindent_code else False))
+    highlighted_blocks = []
+    for block in blocks:
+        this_block = (
+            highlight(block[1])
+            if block[0] == 1
+            else block[1].strip('\n') + '\n'
+        )
+        highlighted_blocks.append(this_block)
 
-        result = "\n".join(highlighted_blocks)
-    else:
-        result = highlight(answer).lstrip('\n')
-    return result
+    return "\n".join(highlighted_blocks)
 
 def _visualize(answers, request_options, search_mode=False):
 
@@ -107,17 +103,21 @@ def _visualize(answers, request_options, search_mode=False):
         topic = answer_dict['topic']
         topic_type = answer_dict['topic_type']
         answer = answer_dict['answer']
-        found = found and not topic_type == 'unknown'
+        found = found and topic_type != 'unknown'
 
         if search_mode and topic != 'LIMITED':
-            if not highlight:
-                result += "\n[%s]\n" % topic
-            else:
-                result += "\n%s%s %s %s%s\n" % (
-                    colored.bg('dark_gray'), colored.attr("res_underlined"),
+            result += (
+                "\n%s%s %s %s%s\n"
+                % (
+                    colored.bg('dark_gray'),
+                    colored.attr("res_underlined"),
                     topic,
-                    colored.attr("res_underlined"), colored.attr('reset'))
-
+                    colored.attr("res_underlined"),
+                    colored.attr('reset'),
+                )
+                if highlight
+                else "\n[%s]\n" % topic
+            )
         if answer_dict['format'] in ['ansi', 'text']:
             result += answer
         elif topic == ':firstpage-v1':

@@ -31,9 +31,7 @@ except NameError:
 
 
 def color_mapping(clr):
-    if clr == 'default':
-        return None
-    return clr
+    return None if clr == 'default' else clr
 
 class Point(object):
     """
@@ -84,7 +82,7 @@ class Panela:
     def __init__(self, x=80, y=25, panela=None, field=None):
 
         if panela:
-            self.field = [x for x in panela.field]
+            self.field = list(panela.field)
             self.size_x = panela.size_x
             self.size_y = panela.size_y
             return
@@ -104,11 +102,7 @@ class Panela:
             return False
         if row < 0:
             return False
-        if col >= self.size_x:
-            return False
-        if row >= self.size_y:
-            return False
-        return True
+        return False if col >= self.size_x else row < self.size_y
 
 #
 # Blocks manipulation
@@ -224,17 +218,16 @@ class Panela:
                 y_extend = y1 + panela.size_y - self.size_y
             self.extend(cols=x_extend, rows=y_extend)
 
-        for i in range(y1, min(self.size_y, y1+panela.size_y)):
-            for j in range(x1, min(self.size_x, x1+panela.size_x)):
-                if transparence:
-                    if panela.field[i-y1][j-x1].char and panela.field[i-y1][j-x1].char != " ":
-                        if panela.field[i-y1][j-x1].foreground:
-                            self.field[i][j].foreground = panela.field[i-y1][j-x1].foreground
-                        if panela.field[i-y1][j-x1].background:
-                            self.field[i][j].background = panela.field[i-y1][j-x1].background
-                        self.field[i][j].char = panela.field[i-y1][j-x1].char
-                else:
-                    self.field[i][j] = panela.field[i-y1][j-x1]
+        for i, j in itertools.product(range(y1, min(self.size_y, y1+panela.size_y)), range(x1, min(self.size_x, x1+panela.size_x))):
+            if transparence:
+                if panela.field[i-y1][j-x1].char and panela.field[i-y1][j-x1].char != " ":
+                    if panela.field[i-y1][j-x1].foreground:
+                        self.field[i][j].foreground = panela.field[i-y1][j-x1].foreground
+                    if panela.field[i-y1][j-x1].background:
+                        self.field[i][j].background = panela.field[i-y1][j-x1].background
+                    self.field[i][j].char = panela.field[i-y1][j-x1].char
+            else:
+                self.field[i][j] = panela.field[i-y1][j-x1]
 
     def strip(self):
         """
@@ -379,11 +372,7 @@ class Panela:
         else:
             background_iter = itertools.repeat(background)
 
-        if char:
-            char_iter = itertools.cycle(char)
-        else:
-            char_iter = itertools.repeat(char)
-
+        char_iter = itertools.cycle(char) if char else itertools.repeat(char)
         for x, y in get_line((x1,y1), (x2, y2)):
             char = next(char_iter)
             color = next(color_iter)
@@ -398,11 +387,7 @@ class Panela:
         """
 
         def calculate_color(i, j):
-            if angle == None:
-                a = 0
-            else:
-                a = angle
-
+            a = 0 if angle is None else angle
             r1, g1, b1 = rgb_from_str(c1)
             r2, g2, b2 = rgb_from_str(c2)
             k = 1.0*(j-x1)/(x2-x1)*(1-a)
@@ -412,11 +397,7 @@ class Panela:
             return "#%02x%02x%02x" % (r3, g3, b3)
 
         def calculate_bg(i, j):
-            if angle_bg == None:
-                a = 0
-            else:
-                a = angle
-
+            a = 0 if angle_bg is None else angle
             r1, g1, b1 = rgb_from_str(bg1)
             r2, g2, b2 = rgb_from_str(bg2)
             k = 1.0*(j-x1)/(x2-x1)*(1-a)
@@ -425,25 +406,18 @@ class Panela:
 
             return "#%02x%02x%02x" % (r3, g3, b3)
 
-        if c2 == None:
+        if c2 is None:
             for i in range(y1,y2):
                 for j in range(x1, x2):
                     self.field[i][j].foreground = c1
                     if bg1:
-                        if bg2:
-                            self.field[i][j].background = calculate_bg(i, j)
-                        else:
-                            self.field[i][j].background = bg1
+                        self.field[i][j].background = calculate_bg(i, j) if bg2 else bg1
         else:
             for i in range(y1,y2):
                 for j in range(x1, x2):
                     self.field[i][j].foreground = calculate_color(i, j)
                     if bg1:
-                        if bg2:
-                            self.field[i][j].background = calculate_bg(i, j)
-                        else:
-                            self.field[i][j].background = bg1
-
+                        self.field[i][j].background = calculate_bg(i, j) if bg2 else bg1
         return self
 
     def put_rectangle(self, x1, y1, x2, y2, char=None, frame=None, color=None, background=None):
@@ -456,11 +430,7 @@ class Panela:
             'single':   u'┌┐└┘─│',
             'double':   u'┌┐└┘─│',
         }
-        if frame in frame_chars:
-            chars = frame_chars[frame]
-        else:
-            chars = char*6
-
+        chars = frame_chars.get(frame, char*6)
         for x in range(x1, x2):
             self.put_point(x, y1, char=chars[4], color=color, background=background)
             self.put_point(x, y2, char=chars[4], color=color, background=background)
@@ -584,10 +554,10 @@ class Template(object):
         }
 
     def _process_line(self, line):
-        if line == 'mask':
-            self._mode = 'mask'
         if line == '':
             self._mode = 'code'
+        elif line == 'mask':
+            self._mode = 'mask'
 
     def read(self, filename):
         """
@@ -595,7 +565,7 @@ class Template(object):
         """
         with open(filename) as f:
             self._mode = 'page'
-            for line in f.readlines():
+            for line in f:
                 line = line.rstrip('\n')
                 if line.startswith('==[') and line.endswith(']=='):
                     self._process_line(line[3:-3].strip())
@@ -603,15 +573,13 @@ class Template(object):
 
                 if self._mode == 'page':
                     self.page.append(line)
-                elif self._mode == 'mask':
-                    self.mask.append(line)
-                elif self._mode == 'code':
+                elif self._mode in {'mask', 'code'}:
                     self.mask.append(line)
 
     def apply_mask(self):
 
         lines = self.page
-        x_size = max([len(x) for x in lines])
+        x_size = max(len(x) for x in lines)
         y_size = len(lines)
 
         self.panela = Panela(x=x_size, y=y_size)
@@ -626,10 +594,7 @@ class Template(object):
 
     def show(self):
 
-        if self.panela:
-            return str(self.panela)
-
-        return self.page
+        return str(self.panela) if self.panela else self.page
 
 def main():
     "Only for experiments"

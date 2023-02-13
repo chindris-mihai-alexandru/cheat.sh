@@ -26,10 +26,11 @@ class RepositoryAdapter(Adapter):
             os.path.join(
                 self.local_repository_location(),
                 self._cheatsheet_files_prefix,
-                '*'+self._cheatsheet_files_extension))
+                f'*{self._cheatsheet_files_extension}',
+            )
+        )
 
-        ext = self._cheatsheet_files_extension
-        if ext:
+        if ext := self._cheatsheet_files_extension:
             answer = [filename[:-len(ext)]
                       for filename in answer
                       if filename.endswith(ext)]
@@ -43,13 +44,11 @@ class RepositoryAdapter(Adapter):
             self._cheatsheet_files_prefix,
             topic)
 
-        if os.path.exists(filename):
-            answer = self._format_page(open(filename, 'r').read())
-        else:
-            # though it should not happen
-            answer = "%s:%s not found" % (str(self.__class__), topic)
-
-        return answer
+        return (
+            self._format_page(open(filename, 'r').read())
+            if os.path.exists(filename)
+            else f"{str(self.__class__)}:{topic} not found"
+        )
 
 
 class GitRepositoryAdapter(RepositoryAdapter):    #pylint: disable=abstract-method
@@ -73,13 +72,21 @@ class GitRepositoryAdapter(RepositoryAdapter):    #pylint: disable=abstract-meth
             # in this case `fetch` has to be implemented
             # in the distinct adapter subclass
             raise RuntimeError(
-                "Do not known how to handle this repository: %s" % cls._repository_url)
+                f"Do not known how to handle this repository: {cls._repository_url}"
+            )
 
         local_repository_dir = cls.local_repository_location()
-        if not local_repository_dir:
-            return None
-
-        return ['git', 'clone', '--depth=1', cls._repository_url, local_repository_dir]
+        return (
+            [
+                'git',
+                'clone',
+                '--depth=1',
+                cls._repository_url,
+                local_repository_dir,
+            ]
+            if local_repository_dir
+            else None
+        )
 
     @classmethod
     def update_command(cls):
@@ -100,7 +107,8 @@ class GitRepositoryAdapter(RepositoryAdapter):    #pylint: disable=abstract-meth
             # in this case `update` has to be implemented
             # in the distinct adapter subclass
             raise RuntimeError(
-                "Do not known how to handle this repository: %s" % cls._repository_url)
+                f"Do not known how to handle this repository: {cls._repository_url}"
+            )
 
         return ['git', 'pull']
 
@@ -122,7 +130,8 @@ class GitRepositoryAdapter(RepositoryAdapter):    #pylint: disable=abstract-meth
             # in this case `update` has to be implemented
             # in the distinct adapter subclass
             raise RuntimeError(
-                "Do not known how to handle this repository: %s" % cls._repository_url)
+                f"Do not known how to handle this repository: {cls._repository_url}"
+            )
 
         return ['git', 'rev-parse', '--short', 'HEAD']
 
@@ -145,10 +154,11 @@ class GitRepositoryAdapter(RepositoryAdapter):    #pylint: disable=abstract-meth
 
         local_repository_dir = cls.local_repository_location()
         state_filename = os.path.join(local_repository_dir, '.cached_revision')
-        state = None
-        if os.path.exists(state_filename):
-            state = open(state_filename, 'r').read()
-        return state
+        return (
+            open(state_filename, 'r').read()
+            if os.path.exists(state_filename)
+            else None
+        )
 
     @classmethod
     def get_updates_list_command(cls):

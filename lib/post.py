@@ -30,20 +30,13 @@ def process_post_request(req, topic):
     """
     for key, val in req.form.items():
         if key == '':
-            if topic is None:
-                topic_name = "UNNAMED"
-            else:
-                topic_name = topic
+            topic_name = "UNNAMED" if topic is None else topic
             cheatsheet = val
+        elif val == '':
+            topic_name = "UNNAMED" if topic is None else topic
+            cheatsheet = key
         else:
-            if val == '':
-                if topic is None:
-                    topic_name = "UNNAMED"
-                else:
-                    topic_name = topic
-                cheatsheet = key
-            else:
-                topic_name = key
-                cheatsheet = val
+            topic_name = key
+            cheatsheet = val
 
         _save_cheatsheet(topic_name, cheatsheet)

@@ -16,10 +16,10 @@ class AdapterMC(type):
     Adapter Metaclass.
     Defines string representation of adapters
     """
-    def __repr__(cls):
-        if hasattr(cls, '_class_repr'):
-            return getattr(cls, '_class_repr')()
-        return super(AdapterMC, cls).__repr__()
+    def __repr__(self):
+        if hasattr(self, '_class_repr'):
+            return getattr(self, '_class_repr')()
+        return super(AdapterMC, self).__repr__()
 
 class Adapter(with_metaclass(AdapterMC, object)):
     """
@@ -49,7 +49,7 @@ class Adapter(with_metaclass(AdapterMC, object)):
 
     @classmethod
     def _class_repr(cls):
-        return '[Adapter: %s (%s)]' % (cls._adapter_name, cls.__name__)
+        return f'[Adapter: {cls._adapter_name} ({cls.__name__})]'
 
     def __init__(self):
         self._list = {None: self._get_list()}
@@ -108,14 +108,8 @@ class Adapter(with_metaclass(AdapterMC, object)):
         pass
 
     def _get_output_format(self, topic):
-        if '/' in topic:
-            subquery = topic.split('/')[-1]
-        else:
-            subquery = topic
-
-        if subquery in [':list']:
-            return 'text'
-        return self._output_format
+        subquery = topic.split('/')[-1] if '/' in topic else topic
+        return 'text' if subquery in [':list'] else self._output_format
 
     # pylint: disable=unused-argument
     @staticmethod
@@ -146,11 +140,9 @@ class Adapter(with_metaclass(AdapterMC, object)):
             'topic_type': self._adapter_name,
             'format': self._get_output_format(topic),
             }
-        answer_dict.update(answer)
+        answer_dict |= answer
 
-        # pylint: disable=assignment-from-none
-        filetype = self._get_filetype(topic)
-        if filetype:
+        if filetype := self._get_filetype(topic):
             answer_dict["filetype"] = filetype
         return answer_dict
 
@@ -168,11 +160,7 @@ class Adapter(with_metaclass(AdapterMC, object)):
         directory instead of the repository directory.
         """
 
-        dirname = None
-
-        if cls._local_repository_location:
-            dirname = cls._local_repository_location
-
+        dirname = cls._local_repository_location or None
         if not dirname and cls._repository_url:
             dirname = cls._repository_url
             if dirname.startswith('https://'):
@@ -224,7 +212,8 @@ class Adapter(with_metaclass(AdapterMC, object)):
         # in this case `fetch` has to be implemented
         # in the distinct adapter subclass
         raise RuntimeError(
-            "Do not known how to handle this repository: %s" % cls._repository_url)
+            f"Do not known how to handle this repository: {cls._repository_url}"
+        )
 
     @classmethod
     def update_command(cls):
@@ -237,14 +226,14 @@ class Adapter(with_metaclass(AdapterMC, object)):
         if not cls._repository_url:
             return None
 
-        local_repository_dir = cls.local_repository_location()
-        if not local_repository_dir:
+        if local_repository_dir := cls.local_repository_location():
+                # in this case `update` has to be implemented
+                # in the distinct adapter subclass
+            raise RuntimeError(
+                f"Do not known how to handle this repository: {cls._repository_url}"
+            )
+        else:
             return None
-
-        # in this case `update` has to be implemented
-        # in the distinct adapter subclass
-        raise RuntimeError(
-            "Do not known how to handle this repository: %s" % cls._repository_url)
 
     @classmethod
     def current_state_command(cls):
@@ -256,14 +245,14 @@ class Adapter(with_metaclass(AdapterMC, object)):
         if not cls._repository_url:
             return None
 
-        local_repository_dir = cls.local_repository_location()
-        if not local_repository_dir:
+        if local_repository_dir := cls.local_repository_location():
+                # in this case `update` has to be implemented
+                # in the distinct adapter subclass
+            raise RuntimeError(
+                f"Do not known how to handle this repository: {cls._repository_url}"
+            )
+        else:
             return None
-
-        # in this case `update` has to be implemented
-        # in the distinct adapter subclass
-        raise RuntimeError(
-            "Do not known how to handle this repository: %s" % cls._repository_url)
 
     @classmethod
     def save_state(cls, state):
@@ -284,10 +273,11 @@ class Adapter(with_metaclass(AdapterMC, object)):
 
         local_repository_dir = cls.local_repository_location()
         state_filename = os.path.join(local_repository_dir, '.cached_revision')
-        state = None
-        if os.path.exists(state_filename):
-            state = open(state_filename, 'r').read()
-        return state
+        return (
+            open(state_filename, 'r').read()
+            if os.path.exists(state_filename)
+            else None
+        )
 
     @classmethod
     def get_updates_list_command(cls):
@@ -322,9 +312,9 @@ def all_adapters(as_dict=False):
     If `as_dict` is True, return dict {'name': adapter} instead of a list.
     """
     def _all_subclasses(cls):
-        return set(cls.__subclasses__()).union(set(
-            [s for c in cls.__subclasses__() for s in _all_subclasses(c)]
-        ))
+        return set(cls.__subclasses__()).union(
+            {s for c in cls.__subclasses__() for s in _all_subclasses(c)}
+        )
 
     if as_dict:
         return {x.name():x for x in _all_subclasses(Adapter)}

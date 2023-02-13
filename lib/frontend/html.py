@@ -5,6 +5,7 @@ Configuration parameters:
     path.internal.ansi2html
 """
 
+
 from gevent.monkey import patch_all
 from gevent.subprocess import Popen, PIPE
 
@@ -14,7 +15,7 @@ import os
 import re
 
 MYDIR = os.path.abspath(os.path.join(__file__, '..', '..'))
-sys.path.append("%s/lib/" % MYDIR)
+sys.path.append(f"{MYDIR}/lib/")
 
 from config import CONFIG
 from globals import error
@@ -57,7 +58,7 @@ def _github_button(topic_type):
 
     short_name = full_name.split('/', 1)[1] # pylint: disable=unused-variable
 
-    button = (
+    return (
         "<!-- Place this tag where you want the button to render. -->"
         '<a aria-label="Star %(full_name)s on GitHub"'
         ' data-count-aria-label="# stargazers on GitHub"'
@@ -67,7 +68,6 @@ def _github_button(topic_type):
         ' href="https://github.com/%(full_name)s"'
         '  class="github-button">%(short_name)s</a>'
     ) % locals()
-    return button
 
 def _render_html(query, result, editable, repository_button, topics_list, request_options):
 
@@ -79,7 +79,7 @@ def _render_html(query, result, editable, repository_button, topics_list, reques
         try:
             proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         except FileNotFoundError:
-            print("ERROR: %s" % cmd)
+            print(f"ERROR: {cmd}")
             raise
         data = data.encode('utf-8')
         stdout, stderr = proc.communicate(data)
@@ -88,13 +88,15 @@ def _render_html(query, result, editable, repository_button, topics_list, reques
         return stdout.decode('utf-8')
 
 
+
     result = result + "\n$"
     result = _html_wrapper(result)
-    title = "<title>cheat.sh/%s</title>" % query
+    title = f"<title>cheat.sh/{query}</title>"
     submit_button = ('<input type="submit" style="position: absolute;'
                      ' left: -9999px; width: 1px; height: 1px;" tabindex="-1" />')
-    topic_list = ('<datalist id="topics">%s</datalist>'
-                  % ("\n".join("<option value='%s'></option>" % x for x in topics_list)))
+    topic_list = '<datalist id="topics">%s</datalist>' % "\n".join(
+        f"<option value='{x}'></option>" for x in topics_list
+    )
 
     curl_line = "<span class='pre'>$ curl cheat.sh/</span>"
     if query == ':firstpage':
@@ -112,14 +114,14 @@ def _render_html(query, result, editable, repository_button, topics_list, reques
     if editable:
         # It's possible that topic directory starts with omitted underscore
         if '/' in query:
-            query = '_' + query
-        edit_page_link = 'https://github.com/chubin/cheat.sheets/edit/master/sheets/' + query
+            query = f'_{query}'
+        edit_page_link = f'https://github.com/chubin/cheat.sheets/edit/master/sheets/{query}'
         edit_button = (
             '<pre style="position:absolute;padding-left:40em;overflow:visible;height:0;">'
             '[<a href="%s" style="color:cyan">edit</a>]'
             '</pre>') % edit_page_link
     result = re.sub("<pre>", edit_button + form_html + "<pre>", result)
-    result = re.sub("<head>", "<head>" + title, result)
+    result = re.sub("<head>", f"<head>{title}", result)
     if not request_options.get('quiet'):
         result = result.replace('</body>',
                                 TWITTER_BUTTON \

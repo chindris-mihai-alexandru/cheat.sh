@@ -52,12 +52,12 @@ class Tldr(GitRepositoryAdapter):
                 skip_empty = False
 
             if line.startswith('-'):
-                line = '# '+line[2:]
+                line = f'# {line[2:]}'
                 skip_empty = True
             elif line.startswith('> '):
                 if header == 2:
                     header = 1
-                line = '# '+line[2:]
+                line = f'# {line[2:]}'
                 skip_empty = True
             elif line.startswith('`') and line.endswith('`'):
                 line = line[1:-1]
@@ -79,18 +79,11 @@ class Tldr(GitRepositoryAdapter):
 
         filename = None
         for subdir in search_order:
-            filename = os.path.join(
-                local_rep, 'pages', subdir, "%s%s" % (topic, ext))
+            filename = os.path.join(local_rep, 'pages', subdir, f"{topic}{ext}")
             if os.path.exists(filename):
                 break
 
-        if filename:
-            answer = self._format_page(open(filename, 'r').read())
-        else:
-            # though it should not happen
-            answer = ''
-
-        return answer
+        return self._format_page(open(filename, 'r').read()) if filename else ''
 
     @classmethod
     def get_updates_list(cls, updated_files_list):
@@ -98,10 +91,10 @@ class Tldr(GitRepositoryAdapter):
         If a .md file was updated, invalidate cache
         entry with the name of this file
         """
-        answer = []
         ext = cls._cheatsheet_files_extension
 
-        for entry in updated_files_list:
-            if entry.endswith(ext):
-                answer.append(entry.split('/')[-1][:-len(ext)])
-        return answer
+        return [
+            entry.split('/')[-1][: -len(ext)]
+            for entry in updated_files_list
+            if entry.endswith(ext)
+        ]

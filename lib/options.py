@@ -14,7 +14,7 @@ def parse_args(args):
     query = ""
     newargs = {}
     for key, val in args.items():
-        if val == "" or val == [] or val == ['']:
+        if val in ["", [], ['']]:
             query += key
             continue
         if val == 'True':
@@ -32,7 +32,7 @@ def parse_args(args):
     }
     for option, meaning in options_meaning.items():
         if option in query:
-            result.update(meaning)
+            result |= meaning
 
     result.update(newargs)
 

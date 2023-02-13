@@ -34,14 +34,12 @@ re_timestamp = re.compile(r"^__CHTSH_DATETIME=.*$")
 with open(cht_curr, "rt") as fin:
     with open(cht_new, "wt") as fout:
         for line in fin:
-            match = re_version.match(line)
-            if match:
-                version = int(match.group(1)) + 1
+            if match := re_version.match(line):
+                version = int(match[1]) + 1
                 fout.write("__CHTSH_VERSION=%s\n" % version)
                 continue
 
-            match = re_timestamp.match(line)
-            if match:
+            if match := re_timestamp.match(line):
                 fout.write('__CHTSH_DATETIME="%s"\n' % timestamp)
                 continue
 
@@ -51,7 +49,7 @@ shutil.copymode(cht_curr, cht_new)
 os.remove(cht_curr)
 os.rename(cht_new, cht_curr)
 
-message = "cht: v%s" % version
+message = f"cht: v{version}"
 run(["git", "add", cht_curr])
 run(["git", "commit", "-m", message])
-run(["git", "tag", "cht@%s" % version, "-m", message])
+run(["git", "tag", f"cht@{version}", "-m", message])

@@ -35,9 +35,7 @@ class LearnXinY(GitRepositoryAdapter):
         or empty string if nothing found
         """
         lang, topic = topic.split('/', 1)
-        if lang not in self.adapters:
-            return ''
-        return self.adapters[lang].get_page(topic)
+        return '' if lang not in self.adapters else self.adapters[lang].get_page(topic)
 
     def _get_list(self, prefix=None):
         """
@@ -57,10 +55,7 @@ class LearnXinY(GitRepositoryAdapter):
             return False
 
         lang, topic = topic.split('/', 1)
-        if lang not in self.adapters:
-            return False
-
-        return self.adapters[lang].is_valid(topic)
+        return self.adapters[lang].is_valid(topic) if lang in self.adapters else False
 
 class LearnXYAdapter(object):
 
@@ -124,13 +119,13 @@ class LearnXYAdapter(object):
         with open(filename) as f_cheat_sheet:
             code_mode = False
             answer = []
-            for line in f_cheat_sheet.readlines():
+            for line in f_cheat_sheet:
                 if line.startswith('```'):
-                    if not code_mode:
+                    if code_mode:
+                        code_mode = False
+                    else:
                         code_mode = True
                         continue
-                    else:
-                        code_mode = False
                 if code_mode:
                     answer.append(line.rstrip('\n'))
             return answer
@@ -149,8 +144,7 @@ class LearnXYAdapter(object):
         block = []
         block_name = "Comments"
         for before, now, after in zip([""]+lines, lines, lines[1:]):
-            new_block_name = self._is_block_separator(before, now, after)
-            if new_block_name:
+            if new_block_name := self._is_block_separator(before, now, after):
                 if block_name:
                     block_text = self._cut_block(block)
                     if block_text != []:
@@ -169,17 +163,14 @@ class LearnXYAdapter(object):
         Check whether topic `name` is valid.
         """
 
-        for topic_list in self._topics_list:
-            if topic_list == name:
-                return True
-        return False
+        return any(topic_list == name for topic_list in self._topics_list)
 
     def get_list(self, prefix=None):
         """
         Get list of topics for `prefix`
         """
         if prefix:
-            return ["%s/%s" % (self.prefix, x) for x in self._topics_list]
+            return [f"{self.prefix}/{x}" for x in self._topics_list]
         return self._topics_list
 
     def get_page(self, name, partial=False):
@@ -195,19 +186,23 @@ class LearnXYAdapter(object):
             return "\n".join(self._whole_cheatsheet) + "\n"
 
         if partial:
-            possible_names = []
-            for block_name, _ in self._blocks:
-                if block_name.startswith(name):
-                    possible_names.append(block_name)
-            if possible_names == [] or len(possible_names) > 1:
+            possible_names = [
+                block_name
+                for block_name, _ in self._blocks
+                if block_name.startswith(name)
+            ]
+            if not possible_names or len(possible_names) > 1:
                 return None
             name = possible_names[0]
 
-        for block_name, block_contents in self._blocks:
-            if block_name == name:
-                return "\n".join(block_contents)
-
-        return None
+        return next(
+            (
+                "\n".join(block_contents)
+                for block_name, block_contents in self._blocks
+                if block_name == name
+            ),
+            None,
+        )
 
 #
 # Specific programming languages LearnXY cheat sheets configurations

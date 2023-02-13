@@ -54,7 +54,7 @@ def fetch_all(skip_existing=True):
             if not cmd:
                 continue
 
-            sys.stdout.write("Fetching %s..." % (adptr))
+            sys.stdout.write(f"Fetching {adptr}...")
             sys.stdout.flush()
             try:
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -76,8 +76,9 @@ def fetch_all(skip_existing=True):
             continue
         if location in known_location \
             and adptr.repository_url() != known_location[location].repository_url():
-            fatal("Duplicate location: %s for %s and %s"
-                  % (location, adptr, known_location[location]))
+            fatal(
+                f"Duplicate location: {location} for {adptr} and {known_location[location]}"
+            )
         known_location[location] = adptr
 
     # Parent directories creation
@@ -90,7 +91,7 @@ def fetch_all(skip_existing=True):
             if skip_existing:
                 existing_locations.append(location)
             else:
-                fatal("%s already exists" % location)
+                fatal(f"{location} already exists")
 
         parent = os.path.dirname(location)
         if os.path.exists(parent):

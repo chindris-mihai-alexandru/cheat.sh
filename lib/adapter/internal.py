@@ -59,10 +59,7 @@ class InternalPages(Adapter):
             for topic in self.get_topics_list()
         ])
 
-        answer = ""
-        for key, val in stat.items():
-            answer += "%s %s\n" % (key, val)
-        return answer
+        return "".join("%s %s\n" % (key, val) for key, val in stat.items())
 
     @staticmethod
     def get_list(prefix=None):
@@ -72,16 +69,14 @@ class InternalPages(Adapter):
         if '/' in topic:
             topic_type, topic_name = topic.split('/', 1)
             if topic_name == ":list":
-                topic_list = [x[len(topic_type)+1:]
-                              for x in self.get_topics_list()
-                              if x.startswith(topic_type + "/")]
+                topic_list = [
+                    x[len(topic_type) + 1 :]
+                    for x in self.get_topics_list()
+                    if x.startswith(f"{topic_type}/")
+                ]
                 return "\n".join(topic_list)+"\n"
 
-        answer = ""
-        if topic == ":list":
-            answer = "\n".join(x for x in self.get_topics_list()) + "\n"
-
-        return answer
+        return "\n".join(self.get_topics_list()) + "\n" if topic == ":list" else ""
 
     def _get_page(self, topic, request_options=None):
         if topic.endswith('/:list') or topic.lstrip('/') == ':list':
@@ -93,7 +88,10 @@ class InternalPages(Adapter):
         elif topic == ":stat":
             answer = self._get_stat()+"\n"
         elif topic in _INTERNAL_TOPICS:
-            answer = open(os.path.join(CONFIG["path.internal.pages"], topic[1:]+".txt"), "r").read()
+            answer = open(
+                os.path.join(CONFIG["path.internal.pages"], f"{topic[1:]}.txt"),
+                "r",
+            ).read()
             if topic in _COLORIZED_INTERNAL_TOPICS:
                 answer = colorize_internal(answer)
 
@@ -129,7 +127,9 @@ class UnknownPages(InternalPages):
             possible_topics = process.extract(topic, topics_list, scorer=fuzz.ratio)[:3]
         else:
             possible_topics = process.extract(topic, topics_list, limit=3, scorer=fuzz.ratio)
-        possible_topics_text = "\n".join([("    * %s %s" % (x[0], int(x[1]))) for x in possible_topics])
+        possible_topics_text = "\n".join(
+            [f"    * {x[0]} {int(x[1])}" for x in possible_topics]
+        )
         return """
 Unknown topic.
 Do you mean one of these topics maybe?

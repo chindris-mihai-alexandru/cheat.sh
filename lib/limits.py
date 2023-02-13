@@ -66,7 +66,7 @@ class Limits(object):
         return self.limit[interval]
 
     def _report_excessive_visits(self, interval, ip_address):
-        log("%s LIMITED [%s for %s]" % (ip_address, self._get_limit(interval), interval))
+        log(f"{ip_address} LIMITED [{self._get_limit(interval)} for {interval}]")
 
     def check_ip(self, ip_address):
         """
@@ -80,8 +80,7 @@ class Limits(object):
             self._log_visit(interval, ip_address)
             if self._limit_exceeded(interval, ip_address):
                 self._report_excessive_visits(interval, ip_address)
-                return ("Not so fast! Number of queries per %s is limited to %s"
-                        % (interval, self._get_limit(interval)))
+                return f"Not so fast! Number of queries per {interval} is limited to {self._get_limit(interval)}"
         return None
 
     def reset(self):
