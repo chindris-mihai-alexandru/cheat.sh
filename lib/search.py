@@ -28,7 +28,7 @@ def _limited_entry():
     return {
         'topic_type': 'LIMITED',
         "topic": "LIMITED",
-        'answer': "LIMITED TO %s ANSWERS" % CONFIG['search.limit'],
+        'answer': f"LIMITED TO {CONFIG['search.limit']} ANSWERS",
         'format': "code",
     }
 
@@ -39,12 +39,11 @@ def _parse_options(options):
     if options is None:
         return {}
 
-    search_options = {
+    return {
         'insensitive': 'i' in options,
         'word_boundaries': 'b' in options,
         'recursive': 'r' in options,
     }
-    return search_options
 
 def match(paragraph, keyword, options=None, options_dict=None):
     """Search for each keyword from `keywords` in `page`
@@ -58,11 +57,7 @@ def match(paragraph, keyword, options=None, options_dict=None):
     if keyword is None:
         return True
 
-    if '~' in keyword:
-        keywords = keyword.split('~')
-    else:
-        keywords = [keyword]
-
+    keywords = keyword.split('~') if '~' in keyword else [keyword]
     if options_dict is None:
         options_dict = _parse_options(options)
 
@@ -77,9 +72,8 @@ def match(paragraph, keyword, options=None, options_dict=None):
         if options_dict["insensitive"]:
             if not re.search(regex, paragraph, re.IGNORECASE):
                 return False
-        else:
-            if not re.search(regex, paragraph):
-                return False
+        elif not re.search(regex, paragraph):
+            return False
     return True
 
 def find_answers_by_keyword(directory, keyword, options="", request_options=None):

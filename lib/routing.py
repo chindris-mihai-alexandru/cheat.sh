@@ -77,7 +77,7 @@ class Router(object):
 
         answer = {}
         for key in sources_to_merge:
-            answer.update({name:key for name in self._topic_list[key]})
+            answer |= {name:key for name in self._topic_list[key]}
         answer = sorted(set(answer.keys()))
 
         self._cached_topics_list = answer
@@ -127,7 +127,7 @@ class Router(object):
         # in a special way:
         # we do not drop the old style cache entries and try to reuse them if possible
         if topic_type == 'question':
-            answer = cache.get('q:' + topic)
+            answer = cache.get(f'q:{topic}')
             if answer:
                 if isinstance(answer, dict):
                     return answer
@@ -139,7 +139,7 @@ class Router(object):
                     }
 
             answer = self._get_page_dict(topic, topic_type, request_options=request_options)
-            cache.put('q:' + topic, answer)
+            cache.put(f'q:{topic}', answer)
             return answer
 
         # Try to find cacheable queries in the cache.
@@ -153,9 +153,8 @@ class Router(object):
                 return answer
 
         answer = self._get_page_dict(topic, topic_type, request_options=request_options)
-        if isinstance(answer, dict):
-            if "cache" in answer:
-                cache_needed = answer["cache"]
+        if isinstance(answer, dict) and "cache" in answer:
+            cache_needed = answer["cache"]
 
         if cache_needed and answer:
             cache.put(topic, answer)

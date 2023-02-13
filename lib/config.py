@@ -59,11 +59,11 @@ def _config_locations():
     * `_WORKDIR`, `_CONF_FILE_WORKDIR`, `_CONF_FILE_MYDIR`
     """
 
-    var = _ENV_VAR_PREFIX + '_PATH_WORKDIR'
+    var = f'{_ENV_VAR_PREFIX}_PATH_WORKDIR'
     workdir = os.environ[var] if var in os.environ \
         else os.path.join(os.environ['HOME'], '.cheat.sh')
 
-    var = _ENV_VAR_PREFIX + '_CONFIG'
+    var = f'{_ENV_VAR_PREFIX}_CONFIG'
     conf_file_workdir = os.environ[var] if var in os.environ \
             else os.path.join(workdir, 'etc/config.yaml')
 
@@ -149,9 +149,7 @@ class Config(dict):
     """
 
     def _absolute_path(self, val):
-        if val.startswith('/'):
-            return val
-        return os.path.join(self['path.workdir'], val)
+        return val if val.startswith('/') else os.path.join(self['path.workdir'], val)
 
     def __init__(self, *args, **kwargs):
         dict.__init__(self)
@@ -183,8 +181,8 @@ def _load_config_from_environ(config):
         if not isinstance(val, str) or isinstance(val, int):
             continue
 
-        env_var = _ENV_VAR_PREFIX + '_' + key.replace('.', '_').upper()
-        if not env_var in os.environ:
+        env_var = f'{_ENV_VAR_PREFIX}_' + key.replace('.', '_').upper()
+        if env_var not in os.environ:
             continue
 
         env_val = os.environ[env_var]

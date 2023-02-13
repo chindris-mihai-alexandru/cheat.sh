@@ -34,8 +34,7 @@ class CommandAdapter(Adapter):
         return self._command
 
     def _get_page(self, topic, request_options=None):
-        cmd = self._get_command(topic, request_options=request_options)
-        if cmd:
+        if cmd := self._get_command(topic, request_options=request_options):
             try:
                 proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
                 answer = proc.communicate()[0].decode('utf-8', 'ignore')
@@ -108,7 +107,7 @@ class AdapterRfc(CommandAdapter):
         return cmd + [topic]
 
     def _get_list(self, prefix=None):
-        return list("rfc/%s" % x for x in range(1, 8649))
+        return [f"rfc/{x}" for x in range(1, 8649)]
 
     def is_found(self, topic):
         return True
@@ -126,10 +125,7 @@ class AdapterOeis(CommandAdapter):
 
     @staticmethod
     def _get_filetype(topic):
-        if "/" in topic:
-            language = topic.split("/")[-1].lower()
-            return language
-        return "bash"
+        return topic.split("/")[-1].lower() if "/" in topic else "bash"
 
     def _get_command(self, topic, request_options=None):
         cmd = self._command[:]

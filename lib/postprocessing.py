@@ -51,7 +51,4 @@ def _filter_by_keyword(answer, keyword, options):
 
     paragraphs = [p for p in _split_paragraphs(answer)
                   if search.match(p, keyword, options=options)]
-    if not paragraphs:
-        return ""
-
-    return _join_paragraphs(paragraphs)
+    return _join_paragraphs(paragraphs) if paragraphs else ""

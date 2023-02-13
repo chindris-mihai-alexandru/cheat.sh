@@ -63,15 +63,11 @@ class Rosetta(GitRepositoryAdapter):
             taskname = os.path.basename(filename)
             answer.append(taskname)
 
-        answer = "".join("%s\n" % x for x in sorted(answer))
-        return answer
+        return "".join("%s\n" % x for x in sorted(answer))
 
     @staticmethod
     def _parse_query(query):
-        if '/' in query:
-            task, subquery = query.split('/', 1)
-        else:
-            task, subquery = query, None
+        task, subquery = query.split('/', 1) if '/' in query else (query, None)
         return task, subquery
 
     def _get_task(self, lang, query):
@@ -104,17 +100,11 @@ class Rosetta(GitRepositoryAdapter):
             index = 1
 
         answer_filename = tasks[index-1]
-        answer = open(answer_filename, 'r').read()
-
-        return answer
+        return open(answer_filename, 'r').read()
 
     def _starting_page(self, query):
         number_of_pages = self._rosetta_get_list(query)
-        answer = (
-            "# %s pages available\n"
-            "# use /:list to list"
-        ) % number_of_pages
-        return answer
+        return ("# %s pages available\n" "# use /:list to list") % number_of_pages
 
     def _get_page(self, topic, request_options=None):
 
@@ -128,8 +118,8 @@ class Rosetta(GitRepositoryAdapter):
         if topic == self.__section_name:
             return self._starting_page(topic)
 
-        if topic.startswith(self.__section_name + '/'):
-            topic = topic[len(self.__section_name + '/'):]
+        if topic.startswith(f'{self.__section_name}/'):
+            topic = topic[len(f'{self.__section_name}/'):]
 
         return self._get_task(lang, topic)
 
@@ -138,8 +128,7 @@ class Rosetta(GitRepositoryAdapter):
 
     def get_list(self, prefix=None):
         answer = [self.__section_name]
-        for i in self._rosetta_code_name:
-            answer.append('%s/%s/' % (i, self.__section_name))
+        answer.extend(f'{i}/{self.__section_name}/' for i in self._rosetta_code_name)
         return answer
 
     def is_found(self, _):

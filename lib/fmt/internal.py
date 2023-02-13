@@ -82,11 +82,7 @@ def colorize_internal(text, palette_number=1):
         return stripped
 
     def _colorize_headers(text):
-        if text.group(0).endswith('\n'):
-            newline = '\n'
-        else:
-            newline = ''
-
+        newline = '\n' if text.group(0).endswith('\n') else ''
         color_number = 3
         return palette[color_number] + text.group(0).strip() + Style.RESET_ALL + newline
 

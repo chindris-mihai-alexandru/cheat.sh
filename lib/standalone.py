@@ -41,7 +41,7 @@ def parse_cmdline(args):
         sys.exit(0)
 
     query_string = " ".join(args)
-    parsed = urlparse.urlparse("https://srv:0/%s" % query_string)
+    parsed = urlparse.urlparse(f"https://srv:0/{query_string}")
     request_options = options.parse_args(
         urlparse.parse_qs(parsed.query, keep_blank_values=True))
 
